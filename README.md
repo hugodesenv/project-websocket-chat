@@ -1,36 +1,181 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HG Messenger
 
-## Getting Started
+Aplicação de chat em tempo real (messenger) construída com **Next.js**, **React**, **TypeScript** e **WebSocket**. O projeto inclui um cliente web e um servidor WebSocket próprio para troca de mensagens entre usuários.
 
-First, run the development server:
+---
+
+## Visão geral
+
+O **HG Messenger** é um chat que permite:
+
+- Conectar/desconectar ao servidor WebSocket pela sidebar
+- Ver conversas agrupadas por contato (quem enviou a mensagem)
+- Buscar conversas pelo texto das mensagens
+- Visualizar mensagens em formato de balões, com data e hora, e divisores por data
+- Receber mensagens em tempo real via WebSocket
+
+A autenticação na conexão é feita por **ID de usuário** e **token** (enviados na URL do WebSocket). O servidor valida o token e encaminha as mensagens para o destinatário (`message_to`).
+
+---
+
+## Tecnologias
+
+| Tecnologia        | Uso                                      |
+|-------------------|------------------------------------------|
+| **Next.js 16**    | Framework React (App Router)             |
+| **React 19**      | Interface do usuário                     |
+| **TypeScript**    | Tipagem estática                         |
+| **Tailwind CSS 4**| Estilos (via PostCSS)                    |
+| **Zustand**       | Estado global (conexão, mensagens)       |
+| **WebSocket (ws)**| Servidor de tempo real na porta 3001     |
+| **react-icons**   | Ícones (ex.: Wi-Fi / desconectado)       |
+
+---
+
+## Estrutura do projeto
+
+```
+project/
+├── app/                    # Next.js App Router
+│   ├── api/hello/          # API Route de exemplo (GET)
+│   ├── globals.css         # Estilos globais + reset
+│   ├── layout.tsx          # Layout raiz (fonte Inter, pt-BR)
+│   └── page.tsx            # Página inicial → <ChatList />
+├── component/
+│   └── ui/
+│       ├── chat/           # Módulo de chat
+│       │   ├── balloon/    # Balão de mensagem (ChatBalloon)
+│       │   ├── chat-divider/ # Divisor de data (ChatDivider)
+│       │   ├── list/       # Lista de conversas (ChatList)
+│       │   ├── message/    # Área da conversa selecionada (ChatMessage)
+│       │   ├── sidebar/    # Sidebar com botão conectar/desconectar (ChatSidebar)
+│       │   └── types.d.ts  # TChatMessage, TChatMessageDetail
+│       ├── input/search/   # Campo de busca (InputSearch)
+│       ├── list-tile/      # Item da lista de conversas (ListTile)
+│       └── title/          # Título da aplicação (Title)
+├── store/
+│   └── useChatStore.ts     # Store Zustand: WebSocket, auth, mensagens, connect/disconnect
+├── types/
+│   └── chatSocketTypes.ts  # Tipos do socket (IUseChatStore, WS_BASE, WSDescription, etc.)
+├── websocket/
+│   ├── server.ts           # Servidor WebSocket (porta 3001)
+│   ├── WebSocketRegistry.ts# Registro de conexões por usuário (rooms) + envio de mensagens
+│   └── types.d.ts          # TWebSocketBody, TWebSocketParameters, etc.
+├── package.json
+├── next.config.ts
+└── README.md
+```
+
+---
+
+## Como funciona
+
+### Cliente (Next.js)
+
+1. **Estado (Zustand – `useChatStore`)**
+   - Guarda: `userId`, `token`, `socket`, `socketState`, `messages`.
+   - `setAuth(userId, token)`: define credenciais antes de conectar.
+   - `connect()`: monta a URL `ws://localhost:3001/?x-id=...&x-token=...`, cria o `WebSocket` e atualiza o estado; em `onmessage` o payload é convertido para o formato `TChatMessage`/`TChatMessageDetail` e as mensagens são agrupadas por `title` (remetente).
+   - `disconnect()`: fecha o socket e limpa o estado.
+
+2. **Tela principal (`ChatList`)**
+   - **Sidebar (`ChatSidebar`)**: botão para conectar (ex.: `setAuth("hugo", "1234")` + `connect()`) ou desconectar.
+   - **Lista de conversas**: itens do tipo `TChatMessage` (título = contato, lista de mensagens). Cada item é um `ListTile` (inicial do nome + última mensagem). Ao clicar, seleciona a conversa.
+   - **Busca**: filtra conversas cujo texto das mensagens contém o termo digitado.
+   - **Área de mensagens (`ChatMessage`)**: exibe a conversa selecionada — balões (`ChatBalloon`), divisores de data (`ChatDivider`) e campo para digitar (envio ainda não ligado ao store/socket na implementação atual).
+
+3. **Tipos de mensagem no cliente**
+   - `TChatMessage`: `{ title: string; messages: TChatMessageDetail[] }`.
+   - `TChatMessageDetail`: `{ text, created_at, owner_id, owner_name }`.
+
+### Servidor WebSocket
+
+1. **Conexão**
+   - Escuta na porta **3001**.
+   - Lê query params da URL: `x-id` (identificador do usuário) e `x-token` (token).
+   - Valida: token deve ser `"1234"` e `x-id` obrigatório (em `WebSocketRegistry.checkParameters`).
+   - Registra a conexão em “rooms”: `Map<x-id, Set<WebSocket>>` (um conjunto de conexões por usuário).
+
+2. **Mensagens**
+   - O cliente envia JSON: `{ message: string, message_to?: string }`.
+   - O servidor monta: `{ type: "message", from: x-id, message_to, message }` e chama `webSocketRegistry.sendMessage(data)`.
+   - O registro envia esse payload para todas as conexões do usuário `message_to`. Assim, as mensagens chegam em tempo real no outro cliente.
+
+3. **Desconexão**
+   - No `close` (e em caso de erro), o usuário é removido do registro.
+
+---
+
+## Pré-requisitos
+
+- **Node.js** (recomendado LTS)
+- **npm** (ou outro gerenciador compatível com o `package.json`)
+
+---
+
+## Como rodar
+
+### 1. Instalar dependências
+
+```bash
+npm install
+```
+
+### 2. Subir o servidor WebSocket
+
+Em um terminal:
+
+```bash
+npm run socket
+```
+
+Isso executa `tsx websocket/server.ts`. O servidor sobe na porta **3001** e exibe algo como: `Websocket server was started! 🚀`.
+
+### 3. Subir o Next.js
+
+Em outro terminal:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+A aplicação fica em **http://localhost:3000**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Usar o chat
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Abra http://localhost:3000.
+2. Na sidebar, clique no botão para **conectar** (ícone de Wi-Fi). A conexão de exemplo usa `userId: "hugo"` e `token: "1234"`.
+3. Para testar com dois usuários, abra outra aba/janela (ou outro navegador), altere no código o `userId` em `setAuth` (ou implemente um login) e conecte. Mensagens enviadas com `message_to` igual ao `x-id` do outro usuário serão entregues em tempo real.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts disponíveis
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Script    | Comando              | Descrição                          |
+|-----------|----------------------|------------------------------------|
+| `dev`     | `next dev`           | Desenvolvimento Next.js (porta 3000) |
+| `build`   | `next build`         | Build de produção                  |
+| `start`   | `next start`         | Servir build de produção           |
+| `lint`    | `eslint`             | Lint do projeto                    |
+| `socket`  | `tsx websocket/server.ts` | Servidor WebSocket (porta 3001) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Configuração do WebSocket
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **URL base do cliente**: definida em `types/chatSocketTypes.ts` como `WS_BASE = "ws://localhost:3001/"`.
+- **Token de teste**: no servidor, `WebSocketRegistry.checkParameters` exige `x-token === "1234"`. Para produção, troque por validação real (ex.: JWT ou sessão).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Observações
+
+- O **campo de digitar mensagem** em `ChatMessage` está na UI; a integração com o store (enviar mensagem via `socket.send` com `message` e `message_to`) pode ser feita como próximo passo.
+- O servidor mantém as conexões em memória (sem persistência de mensagens). Reiniciar o servidor limpa o registro de usuários.
+- Para múltiplos dispositivos por usuário, o registro já suporta mais de uma conexão por `x-id` (Set de WebSockets por usuário).
+
+---
+
+## Resumo
+
+O **HG Messenger** é um chat em tempo real com cliente Next.js/React/Zustand e servidor WebSocket em Node (ws). A estrutura está organizada em componentes de UI, store global, tipos compartilhados e servidor com registro de conexões e encaminhamento de mensagens por usuário. Este README descreve a arquitetura, o fluxo de dados e os passos para rodar e evoluir o projeto.

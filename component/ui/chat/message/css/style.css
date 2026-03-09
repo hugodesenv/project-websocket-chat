@@ -1,0 +1,107 @@
+.chat-det-body {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 15px);
+}
+
+/** title */
+.chat-det-title {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #212121;
+  padding-left: 20px;
+  padding-right: 20px;
+  align-items: center;
+}
+
+.chat-det-title button {
+  all: unset;
+  color: white;
+  cursor: pointer;
+}
+
+.chat-det-title li {
+  display: flex;
+  color: #fafafa;
+  font-size: 14px;
+  font-weight: 600;
+  padding-bottom: 15px;
+  padding-top: 20px;
+}
+
+/* balloon detail */
+.chat-det-balloon {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: #fafafa;
+  font-size: 14px;
+  padding-left: 40px;
+  padding-right: 40px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* including a top and bottom space when first and last item message */
+.chat-det-balloon > :first-child {
+  margin-top: 20px;
+}
+
+.chat-det-balloon > :last-child {
+  margin-bottom: 20px;
+}
+
+.chat-det-balloon ul {
+  padding: 15px;
+  min-width: 60%;
+  max-width: 70%;
+}
+
+/* balloon custom */
+.chat-det-balloon-me {
+  background: #f2a100;
+  background: linear-gradient(90deg, rgba(242, 161, 0, 1) 1%, rgb(236, 142, 49) 40%, rgba(227, 166, 0, 1) 100%);
+  float: right;
+  color: #212121;
+  border-radius: 15px;
+}
+
+.chat-det-balloon-other {
+  background: #008df2;
+  background: linear-gradient(90deg, rgb(0, 123, 211) 1%, rgb(0, 100, 207) 50%, rgba(0, 125, 227, 1) 100%);
+  float: left;
+  border-radius: 10px 20px;
+}
+
+/* username style */
+.chat-det-balloon li:nth-child(1) {
+  font-weight: 600;
+  padding-bottom: 5px;
+  font-size: 14px;
+}
+
+/* formatting date time */
+.chat-det-balloon li:nth-child(3) {
+  text-align: right;
+  font-weight: 600;
+  color: rgb(0, 0, 0);
+  font-size: 10px;
+  font-style: italic;
+  padding-top: 5px;
+}
+
+/** input text */
+.chat-det-input {
+  border-radius: 40px;
+  padding: 15px;
+  margin-left: 20px;
+  margin-right: 20px;
+  background-color: #252525;
+}
+
+.chat-det-input input {
+  all: unset;
+  font-size: 14px;
+  caret-color: #fafafa;
+  color: #fafafa;
+}

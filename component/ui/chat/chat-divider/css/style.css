@@ -1,0 +1,15 @@
+.chat-divider {
+  padding: 4px;
+  display: flex;
+  justify-content: center;
+  background-color: #2d2d2d;
+  color: rgb(118, 118, 118);
+  width: 90px;
+  font-size: 10px;
+  border-radius: 20px;
+}
+
+.chat-divider span {
+  margin-left: 10px;
+  margin-right: 10px;
+}

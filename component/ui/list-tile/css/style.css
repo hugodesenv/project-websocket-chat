@@ -1,0 +1,50 @@
+.listtile {
+  display: flex;
+  flex-direction: row;
+  cursor: pointer;
+  padding: 12px;
+}
+
+.listtile:hover {
+  background-color: rgb(46, 46, 46);
+  border-radius: 10px;
+  transition: 0.5s;
+}
+
+/* message detail */
+.listtile > :nth-child(2) {
+  margin-left: 10px;
+}
+
+/* icon list */
+.listtile > :first-child {
+  background-color: rgb(255, 162, 0);
+  border-radius: 50%;
+  min-height: 50px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* title message */
+.listtile > :nth-child(2) > :first-child {
+  color: #FAFAFA;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* subtitle message */
+.listtile > :nth-child(2) > :nth-child(2) {
+  font-size: 12px;
+  color: #FFFFFF99;
+  margin-top: 2px;
+  white-space: nowrap; /* not allowed breaking words */
+}
+
+.listtile-time {
+  font-size: 11px;
+  color: #FFFFFF80;
+  margin-top: 2px;
+}

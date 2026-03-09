@@ -1,0 +1,24 @@
+.chatlist-menu {
+  background-color: #1d1f1f;
+  padding: 25px;
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
+  color: rgb(224, 224, 224);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.chatlist-menu button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.chatlist-menu button:hover {
+  color: orange;
+  transition: all 0.2s ease;
+}
