@@ -59,8 +59,10 @@
 
 /* balloon custom */
 .chat-det-balloon-me {
-  background: #f2a100;
-  background: linear-gradient(90deg, rgba(242, 161, 0, 1) 1%, rgb(236, 142, 49) 40%, rgba(227, 166, 0, 1) 100%);
+  /*background: #f2a100;*/
+  /*background: linear-gradient(90deg, rgba(242, 161, 0, 1) 1%, rgb(236, 142, 49) 40%, rgba(227, 166, 0, 1) 100%);*/
+  background: #f1f1f1;
+  background: linear-gradient(90deg, #e7e7e7 1%, #d4d4d4 40%, #9c9c9c 100%);
   float: right;
   color: #212121;
   border-radius: 15px;
@@ -104,4 +106,5 @@
   font-size: 14px;
   caret-color: #fafafa;
   color: #fafafa;
+  width: 100%;
 }

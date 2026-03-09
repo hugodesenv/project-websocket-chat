@@ -12,7 +12,7 @@ export const ChatSidebar = () => {
     event.preventDefault();
 
     if (socketState === ReadyState.CLOSED || socketState === ReadyState.UNINSTANTIATED) {
-      setAuth("hugo", "1234");
+      setAuth("hgs-1234", "Hugo Souza", "1234");
       connect();
       return;
     } else if (socketState === ReadyState.OPEN) {

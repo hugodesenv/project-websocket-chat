@@ -14,7 +14,7 @@ import { IUseChatStore } from "@/types/chatSocketTypes";
 export const ChatList = () => {
   const [search, setSearch] = useState("");
   const { messages } = useChatStore() as IUseChatStore;
-  const [selectedMessage, setSelectedMessage] = useState<TChatMessage>({ messages: [], title: "" });
+  const [selectedMessage, setSelectedMessage] = useState<TChatMessage>({ messages: [], owner_id: "", owner_name: "" });
 
   const filteredList = useMemo(() => {
     if (!search.trim()) {
@@ -47,7 +47,7 @@ export const ChatList = () => {
         <div className="chatlist-history">{messageList()}</div>
       </div>
       <div>
-        <ChatMessage from={selectedMessage.title} />
+        <ChatMessage {...selectedMessage} />
       </div>
     </div>
   );

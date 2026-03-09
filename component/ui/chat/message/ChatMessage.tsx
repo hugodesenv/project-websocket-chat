@@ -1,22 +1,33 @@
 import useChatStore from "@/store/useChatStore";
-import { useEffect, useMemo, useRef } from "react";
+import { KeyboardEventHandler, useEffect, useMemo, useRef, useState } from "react";
 import { LuArchive } from "react-icons/lu";
 import { ChatBalloon } from "../balloon/ChatBalloon";
 import { ChatDivider } from "../chat-divider/ChatDivider";
-import { TChatMessage, TChatMessageDetail } from "../types";
+import { DataNotFound } from "../data-not-found/DataNotFound";
 import "./css/style.css";
 
-export const ChatMessage = (prop: { from: string }) => {
+export const ChatMessage = (prop: { owner_id: string; owner_name: string }) => {
+  const [inputText, setInputText] = useState("");
+
+  const { sendMessage } = useChatStore();
+  const message = useChatStore((s) => s.messages.find((m) => m.owner_id === prop.owner_id));
   const targetRef = useRef<HTMLDivElement | null>(null);
-  const chat = useChatStore((state) => state.messages.find((m: TChatMessage) => m.title === prop.from));
-  const title = chat?.title ?? "";
-  const messages: TChatMessageDetail[] = useMemo(() => chat?.messages ?? [], [chat]);
+
+  useEffect(() => {
+    /** scrolling to the end of page. */
+    if (targetRef.current) {
+      targetRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [message]);
 
   const renderedMessages = useMemo(() => {
-    return messages.map((det, index) => {
+    const messages = message?.messages ?? [];
+    return message?.messages.map((det, index) => {
       const currentDate = det.created_at?.toLocaleDateString("pt-BR") ?? "99:99";
       const previousDate = index > 0 ? (messages[index - 1].created_at?.toLocaleDateString("pt-BR") ?? "99:99") : "";
-
       const showDivider = currentDate !== previousDate;
 
       const components = [
@@ -34,35 +45,36 @@ export const ChatMessage = (prop: { from: string }) => {
 
       return components;
     });
-  }, [messages]);
+  }, [message]);
 
-  useEffect(() => {
-    // scrolling to end page.
-    if (targetRef.current) {
-      targetRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-      });
+  const onInputKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (e.key === "Enter") {
+      sendMessage(inputText, prop.owner_id);
+      setInputText("");
     }
-  }, [messages]);
+  };
 
-  if (title.trim() == "") {
-    return <span>Nenhum registro foi encontrado</span>;
-  }
-
-  return (
+  return prop.owner_id.length <= 0 ? (
+    <DataNotFound />
+  ) : (
     <div className="chat-det-body">
       <div className="chat-det-title">
         <ul>
-          <li>{title}</li>
+          <li>{prop.owner_name}</li>
         </ul>
         <button>
           <LuArchive color="red" />
         </button>
       </div>
-      <div className="chat-det-balloon">{renderedMessages.flat()}</div>
+      <div className="chat-det-balloon">{renderedMessages?.flat?.() ?? null}</div>
       <div className="chat-det-input">
-        <input type="text" placeholder="Digite uma mensagem" />
+        <input
+          type="text"
+          placeholder="Digite uma mensagem e pressione enter"
+          onKeyDown={onInputKeyDown}
+          onChange={(e) => setInputText(e.target.value)}
+          value={inputText}
+        />
       </div>
     </div>
   );

@@ -9,10 +9,12 @@ Aplicação de chat em tempo real (messenger) construída com **Next.js**, **Rea
 O **HG Messenger** é um chat que permite:
 
 - Conectar/desconectar ao servidor WebSocket pela sidebar
-- Ver conversas agrupadas por contato (quem enviou a mensagem)
+- Ver conversas agrupadas por contato (remetente/destinatário)
 - Buscar conversas pelo texto das mensagens
-- Visualizar mensagens em formato de balões, com data e hora, e divisores por data
+- Visualizar mensagens em formato de balões, com data e hora, divisores por data e destaque para mensagens **minhas** vs **de outros**
+- Enviar mensagens para o contato selecionado (pressionando **Enter**)
 - Receber mensagens em tempo real via WebSocket
+- Exibir um estado vazio amigável quando nenhuma conversa está selecionada
 
 A autenticação na conexão é feita por **ID de usuário** e **token** (enviados na URL do WebSocket). O servidor valida o token e encaminha as mensagens para o destinatário (`message_to`).
 
@@ -73,20 +75,22 @@ project/
 ### Cliente (Next.js)
 
 1. **Estado (Zustand – `useChatStore`)**
-   - Guarda: `userId`, `token`, `socket`, `socketState`, `messages`.
-   - `setAuth(userId, token)`: define credenciais antes de conectar.
-   - `connect()`: monta a URL `ws://localhost:3001/?x-id=...&x-token=...`, cria o `WebSocket` e atualiza o estado; em `onmessage` o payload é convertido para o formato `TChatMessage`/`TChatMessageDetail` e as mensagens são agrupadas por `title` (remetente).
-   - `disconnect()`: fecha o socket e limpa o estado.
+   - Guarda: `userId`, `userName`, `token`, `socket`, `socketState`, `messages` (histórico agrupado por contato).
+   - `setAuth(userId, userName, token)`: define as credenciais do usuário logado antes de conectar.
+   - `connect()`: monta a URL `ws://localhost:3001/?x-id=...&x-token=...`, cria o `WebSocket` e atualiza o estado; em `onmessage` o payload `{ type, owner_id, owner_name, message }` é convertido para `TChatMessageDetail` e as mensagens são agrupadas por `owner_id`/`owner_name`.
+   - `disconnect()`: fecha o socket e limpa o estado de conexão.
+   - `sendMessage(message, message_to)`: envia JSON `{ message, message_to }` para o servidor via `socket.send` e já adiciona a mensagem na conversa em memória para atualizar a UI imediatamente.
 
 2. **Tela principal (`ChatList`)**
-   - **Sidebar (`ChatSidebar`)**: botão para conectar (ex.: `setAuth("hugo", "1234")` + `connect()`) ou desconectar.
-   - **Lista de conversas**: itens do tipo `TChatMessage` (título = contato, lista de mensagens). Cada item é um `ListTile` (inicial do nome + última mensagem). Ao clicar, seleciona a conversa.
+   - **Sidebar (`ChatSidebar`)**: botão para conectar/desconectar. No exemplo atual, é feito um `setAuth("hgs-1234", "Hugo Souza", "1234")` antes de `connect()`.
+   - **Lista de conversas**: itens do tipo `TChatMessage` (um contato por `owner_id`/`owner_name`). Cada item é um `ListTile` (inicial do nome + última mensagem). Ao clicar, seleciona a conversa.
    - **Busca**: filtra conversas cujo texto das mensagens contém o termo digitado.
-   - **Área de mensagens (`ChatMessage`)**: exibe a conversa selecionada — balões (`ChatBalloon`), divisores de data (`ChatDivider`) e campo para digitar (envio ainda não ligado ao store/socket na implementação atual).
+   - **Área de mensagens (`ChatMessage`)**: exibe a conversa selecionada — balões (`ChatBalloon`), divisores de data (`ChatDivider`) e campo para digitar. Ao pressionar **Enter** no input, a mensagem é enviada para o contato selecionado via `sendMessage`.
+   - **Estado vazio (`DataNotFound`)**: quando nenhuma conversa está selecionada, um estado “nenhum registro encontrado” é exibido na área de mensagens.
 
 3. **Tipos de mensagem no cliente**
-   - `TChatMessage`: `{ title: string; messages: TChatMessageDetail[] }`.
-   - `TChatMessageDetail`: `{ text, created_at, owner_id, owner_name }`.
+   - `TChatMessage`: `{ owner_id: string; owner_name: string; messages: TChatMessageDetail[] }`.
+   - `TChatMessageDetail`: `{ text: string; created_at: Date; owner_id: string; owner_name: string; }`.
 
 ### Servidor WebSocket
 
@@ -170,7 +174,7 @@ A aplicação fica em **http://localhost:3000**.
 
 ## Observações
 
-- O **campo de digitar mensagem** em `ChatMessage` está na UI; a integração com o store (enviar mensagem via `socket.send` com `message` e `message_to`) pode ser feita como próximo passo.
+- O **campo de digitar mensagem** em `ChatMessage` já está integrado ao store: ao pressionar **Enter**, a mensagem é enviada via WebSocket (`sendMessage`) e adicionada ao histórico local.
 - O servidor mantém as conexões em memória (sem persistência de mensagens). Reiniciar o servidor limpa o registro de usuários.
 - Para múltiplos dispositivos por usuário, o registro já suporta mais de uma conexão por `x-id` (Set de WebSockets por usuário).
 

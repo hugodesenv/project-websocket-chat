@@ -1,5 +1,5 @@
 import { TChatMessage, TChatMessageDetail } from "@/component/ui/chat/types";
-import { IUseChatStoreAuth, WS_BASE } from "@/types/chatSocketTypes";
+import { IUseChatStore, IUseChatStoreAuth, WS_BASE } from "@/types/chatSocketTypes";
 import { ReadyState } from "react-use-websocket";
 import { create } from "zustand";
 
@@ -10,15 +10,16 @@ function buildWsUrl(userId: string, token: string): string {
   return `${WS_BASE}?${params.toString()}`;
 }
 
-const useChatStore = create((set, get) => ({
+const useChatStore = create<IUseChatStore>((set, get) => ({
   socket: null,
   messages: [] as TChatMessage[],
   socketState: ReadyState.CLOSED,
   userId: "",
+  userName: "",
   token: "",
 
-  setAuth: (userId: string, token: string) => {
-    set({ userId, token });
+  setAuth: (userId: string, userName: string, token: string) => {
+    set({ userId, token, userName });
   },
 
   // açao para conectar
@@ -39,37 +40,14 @@ const useChatStore = create((set, get) => ({
       const json = JSON.parse(event.data);
 
       set((state) => {
-        // monta a estrutura do json esperado pelo componente
-        const payloadMessage: TChatMessageDetail = {
+        const payload: TChatMessageDetail = {
           created_at: new Date(),
-          owner_id: json.from,
-          owner_name: json.from,
+          owner_id: json.owner_id,
+          owner_name: json.owner_name,
           text: json.message,
         };
 
-        const existingIndex = state.messages.findIndex((m: TChatMessage) => m.title === json.from);
-
-        if (existingIndex >= 0) {
-          // já existe: atualizar só o array messages desse item
-          const updated = [...state.messages];
-
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            messages: [...updated[existingIndex].messages, payloadMessage],
-          };
-
-          return { messages: updated };
-        }
-
-        // não existe: adicionar novo TChatMessage
-        const payload: TChatMessage = {
-          title: json.from,
-          messages: [payloadMessage],
-        };
-
-        return {
-          messages: [...state.messages, payload],
-        };
+        return updateMessageList(state.messages, payload.owner_id, payload.owner_name, payload);
       });
     };
 
@@ -88,6 +66,48 @@ const useChatStore = create((set, get) => ({
       };
     });
   },
+
+  sendMessage: (message: string, message_to: string) => {
+    const ws = get().socket as WebSocket;
+    const payload = JSON.stringify({ message, message_to });
+
+    ws.send(payload);
+
+    set((state) => {
+      const payloadMessage: TChatMessageDetail = {
+        created_at: new Date(),
+        owner_id: state.userId,
+        owner_name: state.userName,
+        text: message,
+      };
+
+      // adiciona nossa conversa para atualizar a UI.
+      return updateMessageList(state.messages, message_to, state.userName, payloadMessage);
+    });
+  },
 }));
 
 export default useChatStore;
+
+function updateMessageList(messages: TChatMessage[], owner_id: string, owner_name: string, payloadMessage: TChatMessageDetail) {
+  const existingIndex = messages.findIndex((m: TChatMessage) => m.owner_id === owner_id);
+
+  if (existingIndex >= 0) {
+    // já existe: atualizar só o array messages desse item
+    const updated = [...messages];
+
+    updated[existingIndex] = {
+      ...updated[existingIndex],
+      messages: [...updated[existingIndex].messages, payloadMessage],
+    };
+
+    return { messages: updated };
+  }
+
+  // não existe: adicionar novo TChatMessage
+  const payload: TChatMessage = { owner_id, owner_name, messages: [payloadMessage] };
+
+  return {
+    messages: [...messages, payload],
+  };
+}

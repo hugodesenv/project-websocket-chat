@@ -1,0 +1,11 @@
+.data-not-found {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: gray;
+  font-size: 14px;
+  font-style: italic;
+  gap: 20px;
+}

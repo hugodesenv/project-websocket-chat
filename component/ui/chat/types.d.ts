@@ -6,6 +6,7 @@ export type TChatMessageDetail = {
 };
 
 export type TChatMessage = {
-  title: string;
+  owner_id: string;
+  owner_name: string;
   messages: TChatMessageDetail[];
 };

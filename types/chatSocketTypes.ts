@@ -14,16 +14,17 @@ export const WS_BASE = "ws://localhost:3001/";
 export interface IUseChatStoreAuth {
   userId: string;
   token: string;
+  userName: string;
 }
 
 export interface IUseChatStore extends IUseChatStoreAuth {
-  socket: WebSocket;
+  socket: WebSocket | null;
   socketState: number;
-  setAuth: (userId: string, token: string) => void;
+  setAuth: (userId: string, userName: string, token: string) => void;
   connect: () => void;
   disconnect: () => void;
   messages: TChatMessage[];
-  messageByFrom: (from: string) => TChatMessage;
+  sendMessage: (message: string, message_to: string) => void;
 }
 
 /*

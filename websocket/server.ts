@@ -29,7 +29,8 @@ wss.on("connection", function connection(ws, request) {
 
     const data: TWebSocketBody = {
       type: "message",
-      from: params["x-id"],
+      owner_id: params["x-id"],
+      owner_name: params["x-owner-name"],
       message_to,
       message,
     };
